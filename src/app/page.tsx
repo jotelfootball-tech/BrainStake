@@ -159,13 +159,15 @@ export default function Home() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.8, type: "spring" }}
             >
-              <Image
-                src="/logo_v2.png"
-                alt="BrainStake Logo"
-                width={160}
-                height={160}
-                className="mix-blend-screen drop-shadow-[0_0_20px_rgba(52,211,153,0.5)] mb-8"
-              />
+              <div className="w-40 h-40 rounded-full flex items-center justify-center overflow-hidden bg-black/40 backdrop-blur-sm border border-white/5 shadow-[0_0_50px_rgba(52,211,153,0.15)] mb-8">
+                <Image
+                  src="/logo_v2.png"
+                  alt="BrainStake Logo"
+                  width={160}
+                  height={160}
+                  className="mix-blend-screen scale-110"
+                />
+              </div>
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 10 }}
@@ -220,9 +222,9 @@ export default function Home() {
                 animate={{ scale: 1, opacity: 1 }}
                 className="relative z-10"
               >
-                <div className="w-24 h-24 mx-auto mb-8 relative flex items-center justify-center">
-                   <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse" />
-                   <Image src="/logo_v2.png" alt="BrainStake Logo" width={110} height={110} className="relative z-10 mix-blend-screen" />
+                <div className="w-28 h-28 mx-auto mb-8 relative flex items-center justify-center rounded-full overflow-hidden bg-black/20">
+                   <div className="absolute inset-0 bg-emerald-500/10 blur-2xl rounded-full animate-pulse" />
+                   <Image src="/logo_v2.png" alt="BrainStake Logo" width={120} height={120} className="relative z-10 mix-blend-screen" />
                 </div>
                 <h2 className="text-3xl font-black text-white mb-3 tracking-tight">Level Up Your Knowledge</h2>
                 <p className="text-sm text-zinc-400 mb-8 max-w-[240px] mx-auto font-medium leading-relaxed">
