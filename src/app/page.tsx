@@ -160,11 +160,11 @@ export default function Home() {
               transition={{ delay: 0.2, duration: 0.8, type: "spring" }}
             >
               <Image
-                src="/logo.png"
+                src="/logo_v2.png"
                 alt="BrainStake Logo"
-                width={120}
-                height={120}
-                className="rounded-3xl shadow-[0_0_40px_rgba(52,211,153,0.3)] mb-6"
+                width={160}
+                height={160}
+                className="mix-blend-screen drop-shadow-[0_0_20px_rgba(52,211,153,0.5)] mb-8"
               />
             </motion.div>
             <motion.h1
@@ -211,12 +211,25 @@ export default function Home() {
 
           {/* Hero Connect Card */}
           {!isConnected ? (
-            <div className="bg-zinc-900/60 p-6 rounded-[24px] border border-white/5 mb-8 text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#35D07F] to-[#6C5DD3]" />
-              <Image src="/logo.png" alt="BrainStake Logo" width={56} height={56} className="mx-auto rounded-2xl mb-4 shadow-lg shadow-[#35D07F]/20" />
-              <h2 className="text-2xl font-extrabold text-white mb-2">Welcome to BrainStake</h2>
-              <p className="text-sm text-zinc-400 mb-6 font-medium">Connect your MiniPay wallet to start earning cUSD.</p>
-              <WalletConnect />
+            <div className="bg-zinc-900/40 p-8 rounded-[32px] border border-white/5 mb-8 text-center relative overflow-hidden group">
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#35D07F] opacity-10 blur-[80px] rounded-full group-hover:opacity-20 transition-opacity" />
+              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#6C5DD3] opacity-10 blur-[80px] rounded-full group-hover:opacity-20 transition-opacity" />
+              
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="relative z-10"
+              >
+                <div className="w-24 h-24 mx-auto mb-8 relative flex items-center justify-center">
+                   <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse" />
+                   <Image src="/logo_v2.png" alt="BrainStake Logo" width={110} height={110} className="relative z-10 mix-blend-screen" />
+                </div>
+                <h2 className="text-3xl font-black text-white mb-3 tracking-tight">Level Up Your Knowledge</h2>
+                <p className="text-sm text-zinc-400 mb-8 max-w-[240px] mx-auto font-medium leading-relaxed">
+                  Connect your MiniPay wallet to compete, stake, and earn real rewards.
+                </p>
+                <WalletConnect />
+              </motion.div>
             </div>
           ) : (
             <div className="mb-8">

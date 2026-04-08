@@ -5,11 +5,11 @@ import { Trophy, Medal, Crown } from "lucide-react";
 import Image from "next/image";
 
 const MOCK_LEADERS = [
-  { id: 1, name: "CryptoKing", address: "0x7227...8a19", xp: 12450, winRate: 85, avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" },
-  { id: 2, name: "BrainApe", address: "0x3184...b23c", xp: 11200, winRate: 78, avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bandit" },
-  { id: 3, name: "CeloMaxi", address: "0x2070...e4ff", xp: 9800, winRate: 71, avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie" },
-  { id: 4, name: "TriviaGod", address: "0x9912...c11a", xp: 8400, winRate: 68, avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Max" },
-  { id: 5, name: "VitalikFan", address: "0x4421...d99b", xp: 7100, winRate: 62, avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Leo" },
+  { id: 1, name: "CryptoKing", address: "0x7227...8a19", xp: 12450, winRate: 85, avatarUrl: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=King&backgroundColor=35D07F" },
+  { id: 2, name: "BrainApe", address: "0x3184...b23c", xp: 11200, winRate: 78, avatarUrl: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=Ape&backgroundColor=6C5DD3" },
+  { id: 3, name: "CeloMaxi", address: "0x2070...e4ff", xp: 9800, winRate: 71, avatarUrl: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=Maxi&backgroundColor=fb923c" },
+  { id: 4, name: "TriviaGod", address: "0x9912...c11a", xp: 8400, winRate: 68, avatarUrl: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=God&backgroundColor=60a5fa" },
+  { id: 5, name: "VitalikFan", address: "0x4421...d99b", xp: 7100, winRate: 62, avatarUrl: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=Fan&backgroundColor=d946ef" },
 ];
 
 export default function LeaderboardPage() {

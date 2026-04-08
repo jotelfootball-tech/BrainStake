@@ -10,10 +10,12 @@ import { BrainCircuit, Clock, Trophy } from "lucide-react";
 function GameComponent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const roomId = searchParams.get("room");
+  const urlRoomId = searchParams.get("room");
   const isHost = searchParams.get("host") === "true";
+  const mode = searchParams.get("mode");
   const { address } = useAccount();
 
+  const [currentRoomId, setCurrentRoomId] = useState(urlRoomId || "");
   const [gameState, setGameState] = useState<"waiting" | "playing" | "finished">("waiting");
   const [question, setQuestion] = useState<{id: number, question: string, options: string[], category: string} | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -23,7 +25,7 @@ function GameComponent() {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!roomId || !address) {
+    if (!urlRoomId && mode !== "solo" && mode !== "train" && !currentRoomId) {
       router.push("/");
       return;
     }
@@ -31,16 +33,20 @@ function GameComponent() {
     const socket = getSocket();
     if (!socket.connected) socket.connect();
 
-    // If host, trigger start game once players joined. The lobby handles player_joined event.
-    // In game screen we just wait for 'next_question'. The host must click "Start Game" or it auto starts.
-    // Let's auto-start if host inside the Game room (or wait for both players here).
-    
-    // In our backend, game starts when 'start_game' is emitted.
+    if (mode === "solo" || mode === "train") {
+      socket.emit('start_solo_game', { walletAddress: address || "guest", mode });
+    }
+
+    socket.on('room_created', (data) => {
+      if (mode === "solo" || mode === "train") {
+        setCurrentRoomId(data.roomId);
+      }
+    });
 
     socket.on('player_joined', () => {
       // If we are late joining or waiting, we can start
-      if (isHost) {
-        socket.emit('start_game', { roomId });
+      if (isHost && urlRoomId) {
+        socket.emit('start_game', { roomId: urlRoomId });
       }
     });
 
@@ -67,22 +73,23 @@ function GameComponent() {
     });
 
     return () => {
+      socket.off('room_created');
       socket.off('player_joined');
       socket.off('next_question');
       socket.off('timer_update');
       socket.off('game_over');
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, address, isHost]);
+  }, [urlRoomId, address, isHost, mode]);
 
   const handleStart = () => {
-    getSocket().emit('start_game', { roomId });
+    getSocket().emit('start_game', { roomId: currentRoomId });
   };
 
   const submitAnswer = (answer: string) => {
-    if (selectedAnswer || !address) return; // already answered
+    if (selectedAnswer) return; // already answered
     setSelectedAnswer(answer);
-    getSocket().emit('submit_answer', { roomId, walletAddress: address, answer });
+    getSocket().emit('submit_answer', { roomId: currentRoomId, walletAddress: address || "guest", answer });
     // Local optimistic score will not be known until game over, our server tracks it silently
     // But we can just show an animation or lock the buttons.
   };
@@ -100,7 +107,7 @@ function GameComponent() {
           </button>
         )}
         <p className="mt-6 text-2xl font-mono tracking-widest text-cyan-400 bg-slate-800 px-6 py-2 rounded-xl border border-slate-700">
-          {roomId}
+          {currentRoomId || "..."}
         </p>
         <p className="mt-2 text-sm text-slate-500">Share this code to join</p>
       </div>
@@ -133,7 +140,7 @@ function GameComponent() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto px-5 pt-8 pb-6 flex flex-col">
+      <div className="flex-1 overflow-y-auto px-5 pt-8 pb-32 flex flex-col scrollbar-hide">
         <div className="flex items-center justify-center gap-2 mb-6 text-emerald-400 font-mono text-xl font-bold">
           <Clock className="w-5 h-5 animate-pulse" />
           {timeLeft}s

@@ -64,15 +64,13 @@ export default function WalletConnect() {
 
   return (
     <div className="flex flex-col gap-3">
-      {connectors.length > 0 && (
-        <button
-          onClick={() => connect({ connector: connectors[0] })}
-          className="w-full py-4 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98] flex justify-center items-center gap-2"
-        >
-          <Wallet className="w-5 h-5" />
-          Connect Wallet
-        </button>
-      )}
+      <button
+        onClick={() => connect({ connector: connectors[0] })}
+        className="w-full py-4 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98] flex justify-center items-center gap-2"
+      >
+        <Wallet className="w-5 h-5" />
+        Connect Wallet
+      </button>
     </div>
   );
 }

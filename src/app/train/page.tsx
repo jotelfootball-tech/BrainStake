@@ -41,7 +41,10 @@ export default function TrainPage() {
       <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3 px-1">Game Modes</h3>
       
       <div className="grid grid-cols-1 gap-3">
-        <button className="group relative overflow-hidden bg-zinc-900/80 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors flex items-center gap-4 text-left">
+        <button 
+          onClick={handleStartSim}
+          className="group relative overflow-hidden bg-zinc-900/80 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors flex items-center gap-4 text-left"
+        >
           <div className="bg-blue-500/20 p-3 rounded-xl group-hover:scale-110 transition-transform">
             <Zap className="w-6 h-6 text-blue-400" />
           </div>
@@ -52,7 +55,10 @@ export default function TrainPage() {
           <Play className="w-5 h-5 text-zinc-600 group-hover:text-white transition-colors" />
         </button>
 
-        <button className="group relative overflow-hidden bg-zinc-900/80 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors flex items-center gap-4 text-left">
+        <button 
+          onClick={handleStartSim}
+          className="group relative overflow-hidden bg-zinc-900/80 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors flex items-center gap-4 text-left"
+        >
           <div className="bg-fuchsia-500/20 p-3 rounded-xl group-hover:scale-110 transition-transform">
             <Target className="w-6 h-6 text-fuchsia-400" />
           </div>

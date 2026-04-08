@@ -17,12 +17,11 @@ const NAV_ITEMS = [
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // Don't show bottom nav if in an active game to maximize screen space
-  if (pathname === "/game") return null;
+  // Bottom nav is now explicitly visible on all pages, including the game view.
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0b0b0f]/90 backdrop-blur-xl border-t border-slate-800/60 pb-safe">
-      <div className="flex items-center justify-around px-2 py-3 max-w-md mx-auto">
+    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[375px] z-50 bg-[#0b0b0f]/90 backdrop-blur-xl border-t border-slate-800/60 pb-safe">
+      <div className="flex items-center justify-around px-2 py-3">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;

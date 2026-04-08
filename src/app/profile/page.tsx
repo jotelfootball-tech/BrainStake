@@ -2,6 +2,7 @@
 
 import { useUserStore } from "@/lib/store";
 import { useAccount } from "wagmi";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Medal, Flame, ShieldCheck, Trophy, Copy, ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -11,6 +12,12 @@ export default function ProfilePage() {
   const { address, isConnected } = useAccount();
   const { xp, level, winStreak, maxWinStreak, gamesPlayed, wins, matchHistory } = useUserStore();
 
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const winRate = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0;
   
   const copyAddress = () => {
@@ -19,83 +26,134 @@ export default function ProfilePage() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <main className="flex-1 overflow-y-auto px-5 py-6 pb-28 scrollbar-hide flex flex-col">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-extrabold text-white tracking-tight">Profile</h1>
-        <Link href="/" className="bg-zinc-800 p-2 rounded-full hover:bg-zinc-700 transition">
-          <ArrowLeft className="w-5 h-5 text-white" />
+      <div className="flex items-center justify-between mb-2">
+        <Link href="/" className="bg-zinc-900 overflow-hidden w-10 h-10 rounded-full flex items-center justify-center hover:bg-zinc-800 transition">
+          <ArrowLeft className="w-5 h-5 text-zinc-400" />
         </Link>
+        <button className="bg-zinc-900 w-10 h-10 rounded-full flex items-center justify-center hover:bg-zinc-800 transition text-zinc-400">
+           {/* More options placeholder */}
+           <div className="flex gap-0.5">
+             <div className="w-1 h-1 rounded-full bg-current" />
+             <div className="w-1 h-1 rounded-full bg-current" />
+             <div className="w-1 h-1 rounded-full bg-current" />
+           </div>
+        </button>
       </div>
 
-      {/* Avatar & Basic Info */}
-      <div className="bg-zinc-900/80 p-6 rounded-[24px] border border-white/5 mb-6 relative overflow-hidden flex flex-col items-center text-center">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#35D07F] opacity-10 blur-3xl rounded-full" />
-        
-        <div className="relative mb-4">
-          <div className="w-20 h-20 bg-gradient-to-tr from-[#35D07F] to-[#6C5DD3] rounded-[20px] flex items-center justify-center p-1 shadow-lg shadow-[#35D07F]/20">
-            <div className="w-full h-full bg-zinc-900 flex items-center justify-center rounded-[16px]">
-              <User className="w-8 h-8 text-[#35D07F]" />
+      {/* Profile Header (Bio Style) */}
+      <div className="flex flex-col items-center text-center mt-4 mb-8">
+        <div className="relative mb-6">
+          <div className="absolute inset-0 bg-[#35D07F]/20 blur-3xl rounded-full scale-150 animate-pulse" />
+          <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-[#35D07F] via-white/20 to-[#6C5DD3] relative z-10 shadow-[0_0_40px_rgba(53,208,127,0.2)]">
+            <div className="w-full h-full bg-[#12121a] rounded-full flex items-center justify-center overflow-hidden border-4 border-zinc-950">
+              <img 
+                src={`https://api.dicebear.com/9.x/bottts/svg?seed=${address || 'guest'}&baseColor=35D07F`} 
+                alt="Player Avatar" 
+                className="w-full h-full object-cover p-2"
+              />
             </div>
           </div>
-          <div className="absolute -bottom-2 -right-2 bg-zinc-950 px-2 py-0.5 rounded-full border border-[#35D07F]/30 text-xs font-bold text-[#35D07F]">
-            Lvl {level}
+          <div className="absolute -bottom-1 -right-1 bg-[#35D07F] text-black w-8 h-8 rounded-full border-4 border-zinc-950 flex items-center justify-center text-[10px] font-black z-20">
+            L{level}
           </div>
         </div>
-        
-        <h2 className="text-lg font-bold text-white mb-1">
+
+        <h1 className="text-3xl font-black text-white mb-2 tracking-tight">
           {isConnected && address ? `${address.slice(0,6)}...${address.slice(-4)}` : "Guest Player"}
-        </h2>
-        {isConnected && (
-          <button onClick={copyAddress} className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition">
-            <Copy className="w-3 h-3" /> Copy Address
-          </button>
-        )}
+        </h1>
+        <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm font-medium">
+           <Medal className="w-4 h-4 text-emerald-400" />
+           <span>{xp.toLocaleString()} XP earned this month</span>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-          <Trophy className="w-5 h-5 text-yellow-400 mb-2" />
-          <span className="text-2xl font-black text-white">{wins}</span>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mt-1">Total Wins</span>
+      {/* Action Row */}
+      <div className="flex justify-center gap-6 mb-10">
+        <button onClick={copyAddress} className="flex flex-col items-center gap-2 group">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center group-hover:bg-[#35D07F]/10 group-hover:border-[#35D07F]/20 transition-all">
+            <Copy className="w-5 h-5 text-zinc-400 group-hover:text-[#35D07F]" />
+          </div>
+          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Address</span>
+        </button>
+        <button className="flex flex-col items-center gap-2 group">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center group-hover:bg-blue-500/10 group-hover:border-blue-500/20 transition-all">
+            <Medal className="w-5 h-5 text-zinc-400 group-hover:text-blue-400" />
+          </div>
+          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Ranks</span>
+        </button>
+        <button className="flex flex-col items-center gap-2 group">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center group-hover:bg-orange-500/10 group-hover:border-orange-500/20 transition-all">
+            <Flame className="w-5 h-5 text-zinc-400 group-hover:text-orange-400" />
+          </div>
+          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Streak</span>
+        </button>
+      </div>
+
+      {/* Info Section */}
+      <div className="space-y-4 mb-8">
+        <div className="bg-zinc-900/60 p-5 rounded-[24px] border border-white/5 backdrop-blur-sm">
+          <p className="text-[10px] font-black text-[#35D07F] uppercase tracking-widest mb-3">About Player</p>
+          <div className="space-y-3">
+             <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                <span className="text-zinc-500 text-sm">Member Since</span>
+                <span className="text-white text-sm font-bold">April 2026</span>
+             </div>
+             <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                <span className="text-zinc-500 text-sm">Win Rate</span>
+                <span className="text-emerald-400 text-sm font-bold">{winRate}%</span>
+             </div>
+             <div className="flex justify-between items-center">
+                <span className="text-zinc-500 text-sm">Max Streak</span>
+                <span className="text-orange-400 text-sm font-bold">{maxWinStreak} wins</span>
+             </div>
+          </div>
         </div>
-        <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-          <ShieldCheck className="w-5 h-5 text-indigo-400 mb-2" />
-          <span className="text-2xl font-black text-white">{winRate}%</span>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mt-1">Win Rate</span>
-        </div>
-        <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-          <Flame className="w-5 h-5 text-orange-400 mb-2" />
-          <span className="text-2xl font-black text-white">{maxWinStreak}</span>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mt-1">Best Streak</span>
-        </div>
-        <div className="bg-zinc-900/60 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-          <Medal className="w-5 h-5 text-[#35D07F] mb-2" />
-          <span className="text-2xl font-black text-white">{xp}</span>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mt-1">Total XP</span>
+
+        <div className="bg-zinc-900/60 p-5 rounded-[24px] border border-white/5 backdrop-blur-sm">
+          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">Detailed Stats</p>
+          <div className="grid grid-cols-2 gap-4">
+             <div className="bg-zinc-950/50 p-3 rounded-2xl border border-white/5">
+                <p className="text-[10px] text-zinc-500 font-bold mb-1">XP PROGRESS</p>
+                <div className="h-1 w-full bg-zinc-800 rounded-full overflow-hidden">
+                   <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.floor((xp % 1000) / 10)}%` }} />
+                </div>
+             </div>
+             <div className="bg-zinc-950/50 p-3 rounded-2xl border border-white/5">
+                <p className="text-[10px] text-zinc-500 font-bold mb-1">TOTAL GAMES</p>
+                <p className="text-lg font-black text-white leading-none">{gamesPlayed}</p>
+             </div>
+          </div>
         </div>
       </div>
 
       {/* Match History */}
-      <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-3 px-1">Recent Matches</h3>
+      <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4 px-1">Recent Matches</h3>
       <div className="space-y-2">
         {matchHistory.length === 0 ? (
-          <div className="text-center py-6 bg-zinc-900/40 rounded-2xl border border-white/5">
-            <p className="text-sm text-zinc-500 font-medium">No matches played yet.</p>
+          <div className="text-center py-8 bg-zinc-900/40 rounded-[24px] border border-white/5">
+            <p className="text-xs text-zinc-500 font-medium">No matches recorded yet.</p>
           </div>
         ) : (
           matchHistory.slice(0,5).map((match) => (
-            <div key={match.id} className="bg-zinc-900/80 p-3 rounded-2xl border border-white/5 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-white capitalize">{match.result}</p>
-                <p className="text-xs text-zinc-500">{new Date(match.date).toLocaleDateString()}</p>
+            <div key={match.id} className="bg-zinc-900/40 p-4 rounded-[24px] border border-white/5 flex items-center justify-between backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${match.result === 'win' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                   {match.result === 'win' ? <Trophy className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5 opacity-50" />}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white capitalize">{match.result}</p>
+                  <p className="text-[10px] text-zinc-500">{new Date(match.date).toLocaleDateString()}</p>
+                </div>
               </div>
               <div className="text-right">
-                <p className={`text-sm font-bold ${match.result === 'win' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <p className={`text-sm font-black ${match.result === 'win' ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {match.result === 'win' ? '+' : ''}{match.earnedCELO} cUSD
                 </p>
-                <p className="text-xs text-[#35D07F]">+{match.earnedXP} XP</p>
+                <p className="text-[10px] text-[#35D07F] font-bold">+{match.earnedXP} XP</p>
               </div>
             </div>
           ))
