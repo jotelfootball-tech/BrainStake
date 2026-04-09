@@ -103,6 +103,19 @@ export default function Home() {
 
   const handleCreateMatch = () => {
     if (!isConnected || !address) return;
+    
+    // MiniPay Deep Link Integration
+    // If running inside MiniPay in-app browser, we should redirect to open the app properly
+    // or ensure the context is handled correctly.
+    // Note: In typical MiniPay DApps, the user is already "inside" MiniPay.
+    // This check is for deep linking scenarios if we were linking FROM a website TO MiniPay.
+    // Since this IS the DApp running in MiniPay, we mostly rely on the Injected Connector.
+    // However, we can ensure `window.ethereum` is treated correctly.
+    
+    if (typeof window !== 'undefined' && (window as any).ethereum?.isMiniPay) {
+      console.log("Detected MiniPay environment");
+    }
+
     setIsCreating(true);
     setStatusText("Generating room...");
     getSocket().emit('create_room', { walletAddress: address });

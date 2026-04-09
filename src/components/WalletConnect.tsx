@@ -69,8 +69,11 @@ export default function WalletConnect() {
         className="w-full py-4 bg-gradient-to-r from-emerald-500 to-cyan-600 hover:from-emerald-400 hover:to-cyan-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98] flex justify-center items-center gap-2"
       >
         <Wallet className="w-5 h-5" />
-        Connect Wallet
+        Connect MiniPay
       </button>
+      <p className="text-xs text-zinc-500 text-center">
+        Make sure MiniPay is installed
+      </p>
     </div>
   );
 }
