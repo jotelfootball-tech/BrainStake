@@ -5,7 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { getSocket } from "@/lib/socket";
 import { useAccount } from "wagmi";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, Clock, Trophy } from "lucide-react";
+import { BrainCircuit, Clock, Trophy, Loader2 } from "lucide-react";
+import questionsData from "@/data/questions.json";
 
 function GameComponent() {
   const searchParams = useSearchParams();
@@ -23,19 +24,88 @@ function GameComponent() {
   const [timeLeft, setTimeLeft] = useState(15);
   const [myScore, setMyScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [botScore, setBotScore] = useState(0);
 
   useEffect(() => {
+    // Client-side Solo Engine Logic
+    const startClientSideGame = () => {
+      const roomId = `SOLO_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      setCurrentRoomId(roomId);
+      
+      // Select 5 random questions
+      const shuffled = [...questionsData].sort(() => 0.5 - Math.random());
+      const selectedQuestions = shuffled.slice(0, 5);
+      
+      let currentIdx = 0;
+      
+      const showNextQuestion = (idx: number) => {
+        if (idx >= 5) {
+          // Game Over
+          const finalScores = { [address || "guest"]: myScore, "BOT_PLAYER": botScore };
+          const winner = myScore > botScore ? (address || "guest") : (botScore > myScore ? "BOT_PLAYER" : "tie");
+          
+          setTimeout(() => {
+            const scoresParam = encodeURIComponent(JSON.stringify(finalScores));
+            router.push(`/result?winner=${winner}&scores=${scoresParam}`);
+          }, 1000);
+          return;
+        }
+
+        setGameState("playing");
+        const q = selectedQuestions[idx];
+        setQuestion({
+          id: q.id,
+          category: q.category,
+          question: q.question,
+          options: q.options
+        });
+        setCurrentIndex(idx + 1);
+        setSelectedAnswer(null);
+        setTimeLeft(15);
+        
+        // Timer setup
+        const timer = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev <= 1) {
+              clearInterval(timer);
+              // Move to next question after a brief delay
+              setTimeout(() => showNextQuestion(idx + 1), 2000);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
+        // Bot simulation
+        if (mode === "solo") {
+          const botDelay = 3000 + Math.random() * 7000; // 3-10 seconds
+          setTimeout(() => {
+            if (Math.random() > 0.5) { // 50% chance for bot to be right
+               setBotScore(s => s + 1);
+            }
+          }, botDelay);
+        }
+      };
+
+      // Initial start delay
+      setTimeout(() => showNextQuestion(0), 1500);
+    };
+
+    // Redirect if no room and not solo/train
     if (!urlRoomId && mode !== "solo" && mode !== "train" && !currentRoomId) {
       router.push("/");
       return;
     }
 
+    // Start solo game immediately
+    if (mode === "solo" || mode === "train") {
+      startClientSideGame();
+      return;
+    }
+
+    // Multiplayer logic remains unchanged (Socket.io)
     const socket = getSocket();
     if (!socket.connected) socket.connect();
-
-    if (mode === "solo" || mode === "train") {
-      socket.emit('start_solo_game', { walletAddress: address || "guest", mode });
-    }
 
     socket.on('room_created', (data) => {
       if (mode === "solo" || mode === "train") {
@@ -44,21 +114,17 @@ function GameComponent() {
     });
 
     socket.on('player_joined', () => {
-      // If we are late joining or waiting, we can start
       if (isHost && urlRoomId) {
         socket.emit('start_game', { roomId: urlRoomId });
       }
     });
-
-    // If Host, and we are just entering game component, let's just trigger start_game if room is ready.
-    // To be safe, let's add a manual start button for host if it's waiting.
 
     socket.on('next_question', (data) => {
       setGameState("playing");
       setQuestion(data.question);
       setCurrentIndex(data.index);
       setTotalQuestions(data.total);
-      setSelectedAnswer(null); // reset selection
+      setSelectedAnswer(null);
     });
 
     socket.on('timer_update', (data) => {
@@ -67,7 +133,6 @@ function GameComponent() {
 
     socket.on('game_over', (data) => {
       setGameState("finished");
-      // Redirect to results
       const scoresParam = encodeURIComponent(JSON.stringify(data.scores));
       router.push(`/result?winner=${data.winner}&scores=${scoresParam}`);
     });
@@ -89,9 +154,17 @@ function GameComponent() {
   const submitAnswer = (answer: string) => {
     if (selectedAnswer) return; // already answered
     setSelectedAnswer(answer);
-    getSocket().emit('submit_answer', { roomId: currentRoomId, walletAddress: address || "guest", answer });
-    // Local optimistic score will not be known until game over, our server tracks it silently
-    // But we can just show an animation or lock the buttons.
+    
+    if (mode === "solo" || mode === "train") {
+      const q = questionsData.find(q => q.id === question?.id);
+      if (q && q.answer === answer) {
+        setMyScore(s => s + 1);
+      }
+      // In solo mode, we just wait for the timer to finish or we could skip ahead.
+      // For simplicity, let's just let the timer run or we can trigger next manually.
+    } else {
+      getSocket().emit('submit_answer', { roomId: currentRoomId, walletAddress: address || "guest", answer });
+    }
   };
 
   if (gameState === "waiting") {

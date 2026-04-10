@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { keccak256, stringToHex, parseUnits } from "viem";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { keccak256, stringToHex, parseUnits, formatUnits } from "viem";
 import WalletConnect from "@/components/WalletConnect";
 import { getSocket } from "@/lib/socket";
 import { TRIVIA_STAKE_ADDRESS, CUSD_ADDRESS, TRIVIA_STAKE_ABI, ERC20_ABI } from "@/lib/contract";
@@ -17,6 +17,19 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const router = useRouter();
   const { xp, level, winStreak } = useUserStore();
+
+  // Fetch cUSD Balance
+  const { data: balanceData, isLoading: isBalanceLoading } = useReadContract({
+    address: CUSD_ADDRESS as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`],
+    query: {
+      enabled: !!address,
+    }
+  });
+
+  const displayBalance = balanceData ? parseFloat(formatUnits(balanceData as bigint, 18)).toFixed(2) : "0.00";
   
   // State
   const [roomCode, setRoomCode] = useState("");
@@ -254,7 +267,13 @@ export default function Home() {
                 
                 <p className="text-xs font-bold text-[#35D07F] uppercase tracking-widest mb-1 z-10">Staking Balance</p>
                 <div className="text-4xl font-black text-white z-10 flex items-center gap-2">
-                  0.05 <span className="text-lg text-zinc-400">cUSD</span>
+                  {isBalanceLoading ? (
+                    <Loader2 className="w-8 h-8 animate-spin text-zinc-500" />
+                  ) : (
+                    <>
+                      {displayBalance} <span className="text-lg text-zinc-400">cUSD</span>
+                    </>
+                  )}
                 </div>
                 <div className="mt-6 w-full flex gap-3 z-10">
                   <button
