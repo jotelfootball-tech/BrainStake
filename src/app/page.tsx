@@ -291,17 +291,35 @@ export default function Home() {
         >
           {/* Top Bar */}
           <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-2 bg-zinc-900/80 px-3 py-1.5 rounded-full border border-white/5">
-              <div className="bg-[#35D07F]/20 p-1 rounded-full">
-                <Sparkles className="w-3.5 h-3.5 text-[#35D07F]" />
+            <div className="flex items-center gap-2">
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden ring-1 ring-white/10">
+                <Image
+                  src="/brainstake-tech-logo.png"
+                  alt="BrainStake logo"
+                  fill
+                  className="object-cover"
+                  sizes="32px"
+                  priority
+                />
               </div>
-              <span className="text-xs font-bold text-white">Lvl {level}</span>
-              <span className="text-[10px] text-zinc-400 font-medium">({Math.floor((xp % 1000) / 10)}%)</span>
+              <div className="leading-tight">
+                <p className="text-sm font-black tracking-tight text-white">BrainStake</p>
+                <p className="text-[10px] uppercase tracking-widest text-zinc-400">Trivia-to-Earn</p>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-1.5 bg-[#6C5DD3]/10 px-3 py-1.5 rounded-full border border-[#6C5DD3]/20">
-              <Flame className="w-3.5 h-3.5 text-[#6C5DD3]" />
-              <span className="text-xs font-bold text-[#6C5DD3]">{winStreak} Streak</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-zinc-900/80 px-3 py-1.5 rounded-full border border-white/5">
+                <div className="bg-[#35D07F]/20 p-1 rounded-full">
+                  <Sparkles className="w-3.5 h-3.5 text-[#35D07F]" />
+                </div>
+                <span className="text-xs font-bold text-white">Lvl {level}</span>
+                <span className="text-[10px] text-zinc-400 font-medium">({Math.floor((xp % 1000) / 10)}%)</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-[#6C5DD3]/10 px-3 py-1.5 rounded-full border border-[#6C5DD3]/20">
+                <Flame className="w-3.5 h-3.5 text-[#6C5DD3]" />
+                <span className="text-xs font-bold text-[#6C5DD3]">{winStreak}</span>
+              </div>
             </div>
           </div>
 

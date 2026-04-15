@@ -12,6 +12,14 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "BrainStake | Trivia-to-Earn",
   description: "Play trivia, stake cUSD, win the pot!",
+  icons: {
+    icon: "/brainstake-tech-logo.png",
+    shortcut: "/brainstake-tech-logo.png",
+    apple: "/brainstake-tech-logo.png",
+  },
+  other: {
+    "talentapp:project_verification": "1be28e691a2074e725ba9ac9987b4e1b1a8a4495acb44314e68787508f69a137d95c082f6aced96c5b3563d42af664922cee158bdec0756d2fc0bed191856195",
+  },
 };
 
 export default function RootLayout({
