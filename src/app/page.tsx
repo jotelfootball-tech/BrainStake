@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useWriteContract, useReadContract } from "wagmi";
-import { parseUnits, formatUnits } from "viem";
+import { parseUnits, formatUnits, keccak256, toHex } from "viem";
 import WalletConnect from "@/components/WalletConnect";
-import { CUSD_ADDRESS, TRIVIA_STAKE_ADDRESS, ERC20_ABI } from "@/lib/contract";
+import { CUSD_ADDRESS, TRIVIA_STAKE_ADDRESS, ERC20_ABI, TRIVIA_STAKE_ABI } from "@/lib/contract";
 import { Swords, Loader2, Flame, Trophy, Play, Sparkles, AlertTriangle, Zap, Trophy as SportIcon, Cpu, Newspaper, Film, Bot as BotIcon } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -46,7 +46,7 @@ export default function Home() {
   const [selectedMode, setSelectedMode] = useState<"normal" | "daily">("normal");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const { writeContractAsync: writeERC20 } = useWriteContract();
+  const { writeContractAsync: writeAsync } = useWriteContract();
 
   const today = new Date().toISOString().split('T')[0];
   const dailyCompleted = lastDailyChallenge === today;
@@ -85,56 +85,39 @@ export default function Home() {
   };
 
   const startGame = async () => {
-    if (!selectedCategory) return;
+    if (!selectedCategory || !address) return;
+    setIsStaking(true);
 
-    if (selectedMode === "normal") {
-      setIsStaking(true);
-      setStatusText("Approving cUSD...");
+    try {
+      const stakeWei = selectedMode === "daily" ? DAILY_STAKE_WEI : STAKE_AMOUNT_WEI;
+      
+      // 1. Approve tokens
+      setStatusText("Step 1/2: Approving cUSD...");
+      await writeAsync({
+        address: CUSD_ADDRESS as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [TRIVIA_STAKE_ADDRESS as `0x${string}`, stakeWei],
+      });
 
-      try {
-        await writeERC20({
-          address: CUSD_ADDRESS as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [TRIVIA_STAKE_ADDRESS as `0x${string}`, STAKE_AMOUNT_WEI],
-        });
+      // 2. Create match on contract
+      setStatusText("Step 2/2: Confirming Stake...");
+      const matchId = keccak256(toHex(`${address}-${Date.now()}`));
+      
+      await writeAsync({
+        address: TRIVIA_STAKE_ADDRESS as `0x${string}`,
+        abi: TRIVIA_STAKE_ABI,
+        functionName: 'createMatch',
+        args: [matchId, CUSD_ADDRESS as `0x${string}`],
+      });
 
-        setStatusText("Starting game...");
-        router.push(`/game?category=${selectedCategory}`);
-      } catch (err) {
-        console.error(err);
-        alert("Transaction failed. Make sure you have enough cUSD and CELO for gas.");
-        setIsStaking(false);
-        setShowCategoryModal(false);
-      }
-    } else {
-      // Daily challenge
-      const allowed = completeDailyChallenge();
-      if (!allowed) {
-        alert("Daily challenge already completed today!");
-        setShowCategoryModal(false);
-        return;
-      }
-
-      setIsStaking(true);
-      setStatusText("Approving cUSD...");
-
-      try {
-        await writeERC20({
-          address: CUSD_ADDRESS as `0x${string}`,
-          abi: ERC20_ABI,
-          functionName: 'approve',
-          args: [TRIVIA_STAKE_ADDRESS as `0x${string}`, DAILY_STAKE_WEI],
-        });
-
-        setStatusText("Starting game...");
-        router.push(`/game?category=${selectedCategory}&mode=daily`);
-      } catch (err) {
-        console.error(err);
-        alert("Transaction failed. Make sure you have enough cUSD and CELO for gas.");
-        setIsStaking(false);
-        setShowCategoryModal(false);
-      }
+      setStatusText("Preparing game...");
+      router.push(`/game?category=${selectedCategory}${selectedMode === 'daily' ? '&mode=daily' : ''}&matchId=${matchId}`);
+    } catch (err) {
+      console.error("Stake failed:", err);
+      alert("Transaction failed or rejected. Please try again.");
+      setIsStaking(false);
+      setShowCategoryModal(false);
     }
   };
 
