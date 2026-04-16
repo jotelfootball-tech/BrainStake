@@ -1,26 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Trophy, Crown, Clock, ArrowLeft } from "lucide-react";
+import { Trophy, Crown, Clock, ArrowLeft, Star } from "lucide-react";
 import Link from "next/link";
 import { useAccount } from "wagmi";
+import { shortenAddress } from "@/lib/utils";
 
-const MOCK_LEADERS = [
-  { id: 1, name: "CryptoKing", address: "0x7227...8a19", score: 3, avgTime: 2.1, date: "2024-01-15" },
-  { id: 2, name: "BrainApe", address: "0x3184...b23c", score: 3, avgTime: 3.5, date: "2024-01-14" },
-  { id: 3, name: "CeloMaxi", address: "0x2070...e4ff", score: 2, avgTime: 1.8, date: "2024-01-15" },
-  { id: 4, name: "TriviaGod", address: "0x9912...c11a", score: 2, avgTime: 4.2, date: "2024-01-13" },
-  { id: 5, name: "VitalikFan", address: "0x4421...d99b", score: 1, avgTime: 2.5, date: "2024-01-15" },
-  { id: 6, name: "Web3Dad", address: "0x1122...aabb", score: 3, avgTime: 5.0, date: "2024-01-12" },
-  { id: 7, name: "SatoshiFan", address: "0x3344...ccdd", score: 2, avgTime: 3.1, date: "2024-01-11" },
-  { id: 8, name: "EthTrader", address: "0x5566...eeff", score: 1, avgTime: 6.0, date: "2024-01-10" },
-];
+const CATEGORY_ICONS = {
+  sports: "⚽",
+  tech: "💻",
+  general: "🌍",
+  pop: "🍿"
+};
 
 export default function LeaderboardPage() {
-  const [timeFilter, setTimeFilter] = useState<"all" | "week">("all");
   const { address } = useAccount();
-  const currentUserAddress = address ? address.slice(0, 6) + "..." + address.slice(-4) : null;
+  const [leaders, setLeaders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLeaders = async () => {
+      try {
+        const storage = (window as any).storage;
+        if (storage) {
+          const data = await storage.get({ key: 'leaderboard', shared: true });
+          if (Array.isArray(data)) {
+            const sorted = [...data].sort((a, b) => {
+              if (b.score !== a.score) return b.score - a.score;
+              return a.avgTime - b.avgTime;
+            });
+            setLeaders(sorted.slice(0, 50));
+          }
+        }
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Fetch leaders failed", err);
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeaders();
+    const interval = setInterval(fetchLeaders, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const userRank = leaders.findIndex(l => l.address === address) + 1;
 
   return (
     <main className="flex-1 overflow-y-auto px-5 py-6 pb-28 scrollbar-hide flex flex-col">
@@ -34,29 +59,23 @@ export default function LeaderboardPage() {
         <h1 className="text-2xl font-extrabold text-white tracking-tight">Leaderboard</h1>
       </div>
 
-      {/* Tabs */}
-      <div className="grid grid-cols-2 gap-2 mb-8 bg-zinc-900/60 p-1 rounded-2xl border border-white/5">
-        <button 
-          onClick={() => setTimeFilter("all")}
-          className={`py-2 text-sm font-bold rounded-xl transition-colors ${
-            timeFilter === "all" 
-              ? "bg-[#35D07F]/20 text-[#35D07F]" 
-              : "text-zinc-500 hover:text-white"
-          }`}
-        >
-          All Time
-        </button>
-        <button 
-          onClick={() => setTimeFilter("week")}
-          className={`py-2 text-sm font-bold rounded-xl transition-colors ${
-            timeFilter === "week" 
-              ? "bg-[#35D07F]/20 text-[#35D07F]" 
-              : "text-zinc-500 hover:text-white"
-          }`}
-        >
-          This Week
-        </button>
-      </div>
+      {/* User Rank Status */}
+      {address && (
+        <div className="mb-6 bg-[#35D07F]/10 border border-[#35D07F]/30 p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#35D07F] p-2 rounded-xl text-black font-black text-sm">
+              #{userRank || '--'}
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm">Your Status</p>
+              <p className="text-[#35D07F] text-xs font-medium">
+                {userRank ? `You are #${userRank} on the board` : "Finish a game to rank!"}
+              </p>
+            </div>
+          </div>
+          <Star className={`w-5 h-5 ${userRank ? 'text-[#35D07F] fill-[#35D07F]' : 'text-zinc-600'}`} />
+        </div>
+      )}
 
       {/* Top 3 Podium */}
       <div className="flex justify-center items-end gap-3 mb-10 mt-4 px-2">
@@ -69,8 +88,8 @@ export default function LeaderboardPage() {
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-300 text-slate-900 text-[10px] px-1.5 font-bold rounded-full">2nd</div>
           </div>
           <div className="h-20 w-16 bg-gradient-to-t from-slate-400/20 to-slate-400/5 rounded-t-lg border-t border-slate-400/30 flex flex-col items-center justify-end pb-2">
-            <span className="text-xs font-bold text-white">{MOCK_LEADERS[1].score}/3</span>
-            <span className="text-[10px] text-zinc-400">{MOCK_LEADERS[1].avgTime}s</span>
+            <span className="text-xs font-bold text-white">{leaders[1]?.score ?? 0}/3</span>
+            <span className="text-[10px] text-zinc-400">{leaders[1]?.avgTime ?? '0.0'}s</span>
           </div>
         </motion.div>
 
@@ -84,8 +103,8 @@ export default function LeaderboardPage() {
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-yellow-950 text-[10px] px-1.5 font-bold rounded-full">1st</div>
           </div>
           <div className="h-28 w-16 bg-gradient-to-t from-yellow-400/20 to-yellow-400/5 rounded-t-lg border-t border-yellow-400/30 flex flex-col items-center justify-end pb-2">
-            <span className="text-xs font-bold text-white">{MOCK_LEADERS[0].score}/3</span>
-            <span className="text-[10px] text-zinc-400">{MOCK_LEADERS[0].avgTime}s</span>
+            <span className="text-xs font-bold text-white">{leaders[0]?.score ?? 0}/3</span>
+            <span className="text-[10px] text-zinc-400">{leaders[0]?.avgTime ?? '0.0'}s</span>
           </div>
         </motion.div>
 
@@ -98,8 +117,8 @@ export default function LeaderboardPage() {
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-orange-400 text-orange-950 text-[10px] px-1.5 font-bold rounded-full">3rd</div>
           </div>
           <div className="h-16 w-16 bg-gradient-to-t from-orange-400/20 to-orange-400/5 rounded-t-lg border-t border-orange-400/30 flex flex-col items-center justify-end pb-2">
-            <span className="text-xs font-bold text-white">{MOCK_LEADERS[2].score}/3</span>
-            <span className="text-[10px] text-zinc-400">{MOCK_LEADERS[2].avgTime}s</span>
+            <span className="text-xs font-bold text-white">{leaders[2]?.score ?? 0}/3</span>
+            <span className="text-[10px] text-zinc-400">{leaders[2]?.avgTime ?? '0.0'}s</span>
           </div>
         </motion.div>
       </div>
@@ -114,19 +133,29 @@ export default function LeaderboardPage() {
 
       {/* Remaining List */}
       <div className="space-y-2">
-        {MOCK_LEADERS.slice(3).map((leader, index) => (
+        {leaders.length === 0 && !isLoading && (
+          <div className="text-center py-10">
+            <p className="text-zinc-500">No scores recorded yet. Be the first!</p>
+          </div>
+        )}
+        
+        {leaders.map((leader, index) => (
           <div 
-            key={leader.id} 
-            className={`grid grid-cols-12 gap-2 px-3 py-3 rounded-2xl border items-center ${
-              currentUserAddress === leader.address 
-                ? "bg-[#35D07F]/10 border-[#35D07F]/30" 
+            key={leader.address} 
+            className={`grid grid-cols-12 gap-2 px-3 py-3 rounded-2xl border items-center transition-all ${
+              address === leader.address 
+                ? "bg-[#35D07F]/20 border-[#35D07F]/50 shadow-[0_0_15px_rgba(53,208,127,0.1)]" 
                 : "bg-zinc-900/60 border-white/5"
             }`}
           >
-            <div className="col-span-2 text-sm font-bold text-zinc-500">{index + 4}</div>
+            <div className={`col-span-2 text-sm font-black ${index < 3 ? 'text-white' : 'text-zinc-500'}`}>
+              {index + 1}
+            </div>
             <div className="col-span-5">
-              <p className="text-sm font-bold text-white">{leader.name}</p>
-              <p className="text-[10px] text-zinc-400 font-medium">{leader.address}</p>
+              <p className="text-sm font-bold text-white">
+                {address === leader.address ? "You" : shortenAddress(leader.address)}
+              </p>
+              <p className="text-[10px] text-zinc-500 font-medium">#{index + 1} Globals</p>
             </div>
             <div className="col-span-3 text-right">
               <p className="text-sm font-black text-[#35D07F]">{leader.score}/3</p>

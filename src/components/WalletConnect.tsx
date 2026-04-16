@@ -104,10 +104,24 @@ export default function WalletConnect() {
     );
   }
 
+  const onSmartConnect = () => {
+    // Look for an injected connector that is available
+    const injectedConnector = connectors.find(c => c.id === 'injected');
+    
+    // If we're in a wallet browser (MetaMask, MiniPay, etc.), the injected connector 
+    // is usually the one we want. We'll attempt direct connection if found.
+    if (injectedConnector) {
+      handleConnect(injectedConnector);
+    } else {
+      // Fallback to modal if no direct injected connector found
+      setShowModal(true);
+    }
+  };
+
   return (
     <>
       <button
-        onClick={() => setShowModal(true)}
+        onClick={onSmartConnect}
         className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#35D07F] to-[#2bb36f] p-[2px]"
       >
         <div className="relative w-full py-4 bg-gradient-to-r from-[#35D07F] to-[#2bb36f] rounded-[14px] transition-all group-hover:opacity-90 flex justify-center items-center gap-3">

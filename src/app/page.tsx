@@ -45,6 +45,15 @@ export default function Home() {
   const [isStaking, setIsStaking] = useState(false);
   const [selectedMode, setSelectedMode] = useState<"normal" | "daily">("normal");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [hasProvider, setHasProvider] = useState<boolean>(true);
+
+  useEffect(() => {
+    // Check if any wallet provider is injected
+    if (typeof window !== 'undefined') {
+      const provider = (window as any).ethereum || (window as any).celo;
+      setHasProvider(!!provider);
+    }
+  }, []);
 
   const { writeContractAsync: writeAsync } = useWriteContract();
 
@@ -320,9 +329,20 @@ export default function Home() {
                 
                 <h2 className="text-3xl font-black text-white mb-3 tracking-tight">Level Up Your Knowledge</h2>
                 <p className="text-sm text-zinc-400 mb-8 max-w-[240px] mx-auto font-medium leading-relaxed">
-                  Connect your MiniPay wallet to compete, stake, and earn real rewards.
+                  {hasProvider 
+                    ? "Connect your MiniPay wallet to compete, stake, and earn real rewards."
+                    : "No wallet detected. Please open BrainStake inside MiniPay or another Web3 wallet browser."}
                 </p>
-                <WalletConnect />
+                {hasProvider ? (
+                  <WalletConnect />
+                ) : (
+                  <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center gap-3 text-left">
+                    <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0" />
+                    <p className="text-xs text-amber-200/80 font-medium">
+                      Wallet not found. If you're on mobile, try opening this link inside the <span className="text-white font-bold">MiniPay</span> app.
+                    </p>
+                  </div>
+                )}
               </motion.div>
             </div>
           ) : (

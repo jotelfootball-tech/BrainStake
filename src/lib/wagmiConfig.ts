@@ -6,6 +6,7 @@ export const config = createConfig({
   chains: [celoAlfajores, celo],
   multiInjectedProviderDiscovery: false,
   connectors: [
+    injected(), // Added generic injected connector for MiniPay/Mobile Wallets
     injected({
       target: 'metaMask',
     }),

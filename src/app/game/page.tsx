@@ -130,17 +130,55 @@ function GameComponent() {
   const finishGame = () => {
     setGameState("finished");
     if (timerRef.current) clearInterval(timerRef.current);
-
     const avgTime = answerTimes.length > 0 
       ? (answerTimes.reduce((a, b) => a + b, 0) / answerTimes.length).toFixed(1)
       : "0.0";
-
     const finalData = {
       score,
       total: TOTAL_QUESTIONS,
       avgTime,
       win: score === TOTAL_QUESTIONS
     };
+
+    // Save to shared leaderboard
+    if (address) {
+      const saveScore = async () => {
+        try {
+          const storage = (window as any).storage;
+          if (storage) {
+            const currentData = await storage.get({ key: 'leaderboard', shared: true });
+            let leaderboard = Array.isArray(currentData) ? [...currentData] : [];
+            const userIndex = leaderboard.findIndex((entry: any) => entry.address === address);
+            const newEntry = {
+              address,
+              score,
+              avgTime: parseFloat(avgTime),
+              timestamp: Date.now()
+            };
+            if (userIndex !== -1) {
+              const oldEntry = leaderboard[userIndex];
+              if (score > oldEntry.score || (score === oldEntry.score && parseFloat(avgTime) < oldEntry.avgTime)) {
+                leaderboard[userIndex] = newEntry;
+              }
+            } else {
+              leaderboard.push(newEntry);
+            }
+            leaderboard.sort((a: any, b: any) => {
+              if (b.score !== a.score) return b.score - a.score;
+              return a.avgTime - b.avgTime;
+            });
+            await storage.set({
+              key: 'leaderboard',
+              value: leaderboard.slice(0, 50),
+              shared: true
+            });
+          }
+        } catch (e) {
+          console.error("Score save failed", e);
+        }
+      };
+      saveScore();
+    }
 
     router.push(`/result?data=${encodeURIComponent(JSON.stringify(finalData))}&mode=${modeParam || 'normal'}`);
   };
