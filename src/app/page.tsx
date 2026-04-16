@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount, useWriteContract, useReadContract } from "wagmi";
+import { useAccount, useWriteContract, useReadContract, useBalance, useChainId } from "wagmi";
 import { parseUnits, formatUnits, keccak256, toHex } from "viem";
 import WalletConnect from "@/components/WalletConnect";
-import { CUSD_ADDRESS, TRIVIA_STAKE_ADDRESS, ERC20_ABI, TRIVIA_STAKE_ABI } from "@/lib/contract";
+import { getCUSDAddress, TRIVIA_STAKE_ADDRESS, ERC20_ABI, TRIVIA_STAKE_ABI } from "@/lib/contract";
 import { Swords, Loader2, Flame, Trophy, Play, Sparkles, AlertTriangle, Zap, Trophy as SportIcon, Cpu, Newspaper, Film, Bot as BotIcon } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,18 +26,29 @@ const CATEGORIES = [
 
 export default function Home() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const router = useRouter();
   const { xp, level, winStreak, lastDailyChallenge, completeDailyChallenge } = useUserStore();
 
+  const currentCUSDAddress = getCUSDAddress(chainId);
+
+  // Fetch cUSD Balance
   const { data: balanceData, isLoading: isBalanceLoading } = useReadContract({
-    address: CUSD_ADDRESS as `0x${string}`,
+    address: currentCUSDAddress as `0x${string}`,
     abi: ERC20_ABI,
     functionName: 'balanceOf',
     args: [address as `0x${string}`],
     query: { enabled: !!address }
   });
 
+  // Fetch native CELO Balance
+  const { data: celoBalance } = useBalance({
+    address: address as `0x${string}`,
+    query: { enabled: !!address }
+  });
+
   const displayBalance = balanceData ? parseFloat(formatUnits(balanceData as bigint, 18)).toFixed(2) : "0.00";
+  const displayCelo = celoBalance ? parseFloat(celoBalance.formatted).toFixed(2) : "0.00";
   
   const [showSplash, setShowSplash] = useState(true);
   const [showStakeModal, setShowStakeModal] = useState(false);
@@ -103,7 +114,7 @@ export default function Home() {
       // 1. Approve tokens
       setStatusText("Step 1/2: Approving cUSD...");
       await writeAsync({
-        address: CUSD_ADDRESS as `0x${string}`,
+        address: currentCUSDAddress as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [TRIVIA_STAKE_ADDRESS as `0x${string}`, stakeWei],
@@ -117,7 +128,7 @@ export default function Home() {
         address: TRIVIA_STAKE_ADDRESS as `0x${string}`,
         abi: TRIVIA_STAKE_ABI,
         functionName: 'createMatch',
-        args: [matchId, CUSD_ADDRESS as `0x${string}`],
+        args: [matchId, currentCUSDAddress as `0x${string}`],
       });
 
       setStatusText("Preparing game...");
@@ -380,15 +391,34 @@ export default function Home() {
                 <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-[#6C5DD3] opacity-20 blur-2xl rounded-full" />
                 
                 <p className="text-xs font-bold text-[#35D07F] uppercase tracking-widest mb-1 z-10">Your Balance</p>
-                <div className="text-4xl font-black text-white z-10 flex items-center gap-2">
-                  {isBalanceLoading ? (
-                    <span className="text-zinc-500">...</span>
-                  ) : (
-                    <>
-                      {displayBalance} <span className="text-lg text-zinc-400">cUSD</span>
-                    </>
-                  )}
+                <div className="flex flex-col items-center gap-1 z-10">
+                  <div className="text-4xl font-black text-white flex items-center gap-2">
+                    {isBalanceLoading ? (
+                      <span className="text-zinc-500">...</span>
+                    ) : (
+                      <>
+                        {displayBalance} <span className="text-lg text-zinc-400">cUSD</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="bg-white/5 px-3 py-1 rounded-full border border-white/5 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">
+                      Native: {displayCelo} CELO
+                    </span>
+                  </div>
                 </div>
+
+                {parseFloat(displayBalance) === 0 && parseFloat(displayCelo) > 0 && (
+                  <div className="mt-4 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl z-10 w-full">
+                    <p className="text-[10px] text-amber-200/80 font-medium leading-relaxed flex items-start gap-2">
+                      <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+                      <span>
+                        You have CELO, but <span className="text-white font-bold">cUSD</span> is required for staking.
+                      </span>
+                    </p>
+                  </div>
+                )}
 
                 <div className="mt-6 w-full z-10 space-y-2">
                   <button

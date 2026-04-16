@@ -4,6 +4,14 @@ export const TRIVIA_STAKE_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 
 export const CUSD_ADDRESS = "0x765DE816845861e75A25fCA122bb6898B8B1282a";
 export const USDC_ADDRESS = "0xcebA9300f2b948710d2653dD7B07f33A8B32118C";
 
+// Alfajores addresses
+export const ALFAJORES_CUSD_ADDRESS = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1";
+
+export const getCUSDAddress = (chainId?: number) => {
+  if (chainId === 44787) return ALFAJORES_CUSD_ADDRESS;
+  return CUSD_ADDRESS;
+};
+
 export const TRIVIA_STAKE_ABI = [
   {
     "inputs": [
