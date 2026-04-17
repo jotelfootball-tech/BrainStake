@@ -1,8 +1,8 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Trophy, Frown, Clock, ArrowLeft, ArrowRight, Share2 } from "lucide-react";
-import { Suspense, useEffect } from "react";
+import { Trophy, Frown, Clock, ArrowLeft, ArrowRight, Share2, Sparkles } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useUserStore } from "@/lib/store";
 
@@ -25,6 +25,47 @@ function ResultComponent() {
   }
 
   const { score, total, avgTime, win } = resultData;
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  // Record match and fetch AI summary when component mounts
+  useEffect(() => {
+    if (isFreeMode) return;
+    
+    const earnedXP = score * 10;
+    const earnedCELO = win ? (total === 3 ? 0.05 : 0.03) : 0;
+    
+    recordMatch(
+      {
+        opponent: "BrainStake Bot",
+        result: win ? "win" : "loss",
+        earnedCELO,
+        earnedXP,
+      },
+      score
+    );
+  }, [isFreeMode]);
+
+  // Fetch AI summary
+  useEffect(() => {
+    setSummaryLoading(true);
+    fetch("/api/summary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        score,
+        total,
+        avgTime,
+        category: searchParams.get("category") || "mixed",
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.summary) setAiSummary(data.summary);
+      })
+      .catch(console.error)
+      .finally(() => setSummaryLoading(false));
+  }, [score, total, avgTime]);
 
   // Record match when component mounts (only for stake mode)
   useEffect(() => {
@@ -66,7 +107,7 @@ function ResultComponent() {
         {win ? "You Won!" : "Better Luck Next Time!"}
       </h1>
       
-      <p className="text-slate-400 font-medium mb-10 text-lg">
+      <p className="text-slate-400 font-medium mb-6 text-lg">
         {win 
           ? isFreeMode 
             ? "Great job! You beat the bot!" 
@@ -75,6 +116,23 @@ function ResultComponent() {
             ? "Keep practicing!" 
             : "Stake lost. Keep practicing!"}
       </p>
+
+      {/* AI Summary */}
+      {(aiSummary || summaryLoading) && (
+        <div className="bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 rounded-2xl p-4 mb-6 border border-violet-500/30">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-violet-400" />
+            <span className="text-xs font-bold text-violet-400 uppercase tracking-widest">AI Insight</span>
+          </div>
+          <p className="text-white text-sm font-medium">
+            {summaryLoading ? (
+              <span className="animate-pulse text-slate-400">Generating insight...</span>
+            ) : (
+              aiSummary
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Score Card */}
       <div className="bg-zinc-900/60 rounded-3xl p-6 border border-white/5 mb-8 backdrop-blur-sm">
