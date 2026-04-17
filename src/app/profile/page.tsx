@@ -1,22 +1,69 @@
 "use client";
 
 import { useUserStore } from "@/lib/store";
-import { useAccount } from "wagmi";
+import { useAccount, useWriteContract, useReadContract, useChainId } from "wagmi";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Medal, Flame, ShieldCheck, Trophy, Copy, ArrowLeft } from "lucide-react";
+import { User, Medal, Flame, ShieldCheck, Trophy, Copy, ArrowLeft, Wallet, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { parseUnits, formatUnits } from "viem";
+import { getCUSDAddress, TRIVIA_STAKE_ADDRESS, ERC20_ABI, TRIVIA_STAKE_ABI } from "@/lib/contract";
 
 export default function ProfilePage() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const { xp, level, winStreak, maxWinStreak, gamesPlayed, wins, bestScore, matchHistory } = useUserStore();
 
   const [mounted, setMounted] = useState(false);
+  const [fundAmount, setFundAmount] = useState("1");
+  const [funding, setFunding] = useState(false);
+
+  const currentCUSDAddress = getCUSDAddress(chainId);
+
+  const { writeContractAsync } = useWriteContract();
+
+  const { data: housePoolData } = useReadContract({
+    address: TRIVIA_STAKE_ADDRESS as `0x${string}`,
+    abi: TRIVIA_STAKE_ABI,
+    functionName: "housePool",
+    args: [currentCUSDAddress as `0x${string}`],
+    query: { enabled: !!address }
+  });
+
+  const housePoolBalance = housePoolData ? parseFloat(formatUnits(housePoolData as bigint, 18)) : 0;
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleFundPool = async () => {
+    if (!address || funding) return;
+    try {
+      setFunding(true);
+      const amountWei = parseUnits(fundAmount, 18);
+      
+      await writeContractAsync({
+        address: currentCUSDAddress as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [TRIVIA_STAKE_ADDRESS as `0x${string}`, amountWei],
+      });
+
+      await writeContractAsync({
+        address: TRIVIA_STAKE_ADDRESS as `0x${string}`,
+        abi: TRIVIA_STAKE_ABI,
+        functionName: "fundHousePool",
+        args: [currentCUSDAddress as `0x${string}`, amountWei],
+      });
+
+      alert("Pool funded successfully!");
+    } catch (e) {
+      console.error("Fund pool failed", e);
+    } finally {
+      setFunding(false);
+    }
+  };
 
   const winRate = gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) : 0;
   
@@ -133,6 +180,33 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* House Pool (Admin) */}
+      {address && (
+        <div className="bg-amber-500/10 p-5 rounded-[24px] border border-amber-500/30 mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Wallet className="w-4 h-4 text-amber-400" />
+            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">House Pool (Admin)</p>
+          </div>
+          <p className="text-white text-lg font-bold mb-3">{housePoolBalance.toFixed(2)} cUSD</p>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              value={fundAmount}
+              onChange={(e) => setFundAmount(e.target.value)}
+              placeholder="Amount"
+              className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-white text-sm font-bold"
+            />
+            <button
+              onClick={handleFundPool}
+              disabled={funding || parseFloat(fundAmount) <= 0}
+              className="bg-amber-500 disabled:bg-zinc-700 text-black font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-2"
+            >
+              {funding ? <Loader2 className="w-4 h-4 animate-spin" /> : "Fund"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Match History */}
       <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4 px-1">Recent Matches</h3>

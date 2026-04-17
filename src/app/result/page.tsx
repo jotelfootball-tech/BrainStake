@@ -1,10 +1,12 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Trophy, Frown, Clock, ArrowLeft, ArrowRight, Share2, Sparkles } from "lucide-react";
+import { Trophy, Frown, Clock, ArrowLeft, ArrowRight, Share2, Sparkles, Wallet } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useUserStore } from "@/lib/store";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { TRIVIA_STAKE_ADDRESS, getCUSDAddress, TRIVIA_STAKE_ABI } from "@/lib/contract";
 
 function ResultComponent() {
   const searchParams = useSearchParams();
@@ -27,6 +29,39 @@ function ResultComponent() {
   const { score, total, avgTime, win } = resultData;
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+  const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
+
+  const { writeContractAsync } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ 
+    hash: txHash || "0x0000000000000000000000000000000000000000000000000000000000000000" 
+  });
+
+  const handleClaim = async () => {
+    if (!win || isFreeMode || claimed || claiming) return;
+    try {
+      setClaiming(true);
+      const token = getCUSDAddress();
+      const hash = await writeContractAsync({
+        address: TRIVIA_STAKE_ADDRESS,
+        abi: TRIVIA_STAKE_ABI,
+        functionName: "claimReward",
+        args: [token],
+      });
+      setTxHash(hash);
+    } catch (e) {
+      console.error("Claim failed", e);
+      setClaiming(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isSuccess) {
+      setClaimed(true);
+      setClaiming(false);
+    }
+  }, [isSuccess]);
 
   // Record match and fetch AI summary when component mounts
   useEffect(() => {
@@ -132,6 +167,28 @@ function ResultComponent() {
             )}
           </p>
         </div>
+      )}
+
+      {/* Claim Reward Button */}
+      {win && !isFreeMode && (
+        <button
+          onClick={handleClaim}
+          disabled={claiming || isConfirming || claimed}
+          className={`w-full py-4 rounded-2xl font-extrabold transition-all active:scale-[0.98] flex items-center justify-center gap-2 mb-6 ${
+            claimed 
+              ? "bg-emerald-500 text-black cursor-default"
+              : "bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black"
+          }`}
+        >
+          <Wallet className="w-5 h-5" />
+          {claiming || isConfirming ? (
+            "Collecting..."
+          ) : claimed ? (
+            "Collected!"
+          ) : (
+            "Collect Reward (0.05 cUSD)"
+          )}
+        </button>
       )}
 
       {/* Score Card */}
