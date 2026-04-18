@@ -7,6 +7,7 @@ import { Wallet, LogOut, X, ExternalLink, AlertCircle, ChevronRight } from 'luci
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MetaMaskIcon, PhantomIcon, MiniPayIcon } from './WalletIcons';
+import { useMiniPay } from '@/lib/hooks/useMiniPay';
 
 export default function WalletConnect() {
   const { address, isConnected, connector } = useAccount();
@@ -24,6 +25,8 @@ export default function WalletConnect() {
       enabled: isConnected && !!address,
     }
   });
+
+  const { isMiniPayAvailable, connectToMiniPay } = useMiniPay();
 
   useEffect(() => {
     setMounted(true);
@@ -61,6 +64,22 @@ export default function WalletConnect() {
     icon: getWalletIcon(c.name),
     connector: c
   }));
+
+  // Add MiniPay at the top if available
+  const prioritizedWallets = isMiniPayAvailable 
+    ? [
+        {
+          name: 'MiniPay',
+          icon: <MiniPayIcon className="w-10 h-10" />,
+          connector: connectors.find(c => {
+            const id = c.id.toLowerCase();
+            const name = c.name.toLowerCase();
+            return id.includes('coinbase') || name.includes('coinbase') || id.includes('coincash') || name.includes('minipay');
+          }) || connectors[0]
+        },
+        ...availableWallets.filter(w => w.name !== 'MiniPay' && w.name !== 'Coinbase Wallet')
+      ]
+    : availableWallets;
 
   if (isConnected && address) {
     const formattedBalance = balanceData ? Number(formatUnits(balanceData as bigint, 18)).toFixed(2) : "0.00";
@@ -104,7 +123,13 @@ export default function WalletConnect() {
     );
   }
 
-  const onSmartConnect = () => {
+  const onSmartConnect = async () => {
+    // Try MiniPay first if available
+    if (isMiniPayAvailable) {
+      await connectToMiniPay();
+      return;
+    }
+
     // Look for an injected connector that is available
     const injectedConnector = connectors.find(c => c.id === 'injected');
     
@@ -171,8 +196,8 @@ export default function WalletConnect() {
 
               <div className="p-6 pt-2">
                 <div className="space-y-2 mb-6">
-                  {availableWallets.length > 0 ? (
-                    availableWallets.map((wallet, index) => (
+                  {prioritizedWallets.length > 0 ? (
+                    prioritizedWallets.map((wallet, index) => (
                       <motion.button
                         key={wallet.name}
                         initial={{ opacity: 0, x: -20 }}

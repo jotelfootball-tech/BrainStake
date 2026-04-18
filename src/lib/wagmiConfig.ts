@@ -1,17 +1,19 @@
 import { createConfig, http, createStorage } from 'wagmi';
 import { celo, celoAlfajores } from 'wagmi/chains';
-import { injected, coinbaseWallet } from 'wagmi/connectors';
+import { injected, coinbaseWallet, walletConnect } from 'wagmi/connectors';
 
 export const config = createConfig({
   chains: [celoAlfajores, celo],
   multiInjectedProviderDiscovery: false,
   connectors: [
-    injected(), // Added generic injected connector for MiniPay/Mobile Wallets
-    injected({
-      target: 'metaMask',
+    walletConnect({
+      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '8d0f371771159754a9e4c4e84a4d3dd2',
     }),
     injected({
       target: 'coinbaseWallet',
+    }),
+    injected({
+      target: 'metaMask',
     }),
     coinbaseWallet({
       projectId: 'brainstake',
